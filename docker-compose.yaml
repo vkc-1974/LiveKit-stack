@@ -28,7 +28,7 @@ services:
       - "7880:7880"
       - "7881:7881"
       - "7882:7882/udp"
-      - "51000-51999:50000-50999/udp"
+      - "53000-53199:50000-50199/udp"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
     command: --config /etc/livekit.yaml --dev
@@ -42,7 +42,7 @@ services:
     ports:
       - "5060:5060/tcp"
       - "5060:5060/udp"
-      - "55000-55999:50000-50999/udp"
+      - "55000-55199:50000-50199/udp"
     environment:
       SIP_CONFIG_BODY: |
         log_level: debug
@@ -52,7 +52,7 @@ services:
         redis:
           address: redis:6379
         sip_port: 5060
-        rtp_port: 50000-50999
+        rtp_port: 50000-50199
         use_external_ip: true
         media_timeout: "0s"
     depends_on:

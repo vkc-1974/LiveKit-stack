@@ -1,6 +1,6 @@
 * Create Livekit configuration (for local usage):
 ```shell
-  `$ docker run -it --rm -v$(pwd):/output livekit/generate --local` 
+  `$ docker run -it --rm -v$(pwd):/output livekit/generate --local`
 ```
   or use existing one
 ```yaml
@@ -9,7 +9,7 @@ rtc:
     udp_port: 7882
     tcp_port: 7881
     port_range_start: 50000
-    port_range_end:   50999
+    port_range_end:   50199
 keys:
     APIAr4ziPRxD7RQ: NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
 logging:
@@ -78,7 +78,7 @@ services:
       - "7880:7880"
       - "7881:7881"
       - "7882:7882/udp"
-      - "51000-51999:50000-50999/udp"
+      - "51000-51199:50000-50199/udp"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
     command: --config /etc/livekit.yaml --dev
@@ -92,7 +92,7 @@ services:
     ports:
       - "5060:5060/tcp"
       - "5060:5060/udp"
-      - "55000-55999:50000-50999/udp"
+      - "55000-55199:50000-50199/udp"
     environment:
       SIP_CONFIG_BODY: |
         log_level: debug
@@ -102,7 +102,7 @@ services:
         redis:
           address: redis:6379
         sip_port: 5060
-        rtp_port: 50000-50999
+        rtp_port: 50000-50199
         use_external_ip: true
     depends_on:
       - livekit
@@ -119,7 +119,7 @@ volumes:
 docker compose up
 ```
 
-* Prepare database table and populate it:
+* Prepare database table and populate it: wtart DB service running, connect to it and apply following SQL script
 ```shell
 docker exec -it $(docker ps -qf "name=mariadb") mariadb -u livekit_user -plivekit_pass livekit_db
 ```
@@ -140,7 +140,7 @@ docker exec -it $(docker ps -qf "name=ollama") ollama pull llama3.2:3b-instruct-
 
 * Create dispatch rule
 ```shell
-cat > dispatch-rule.json << EOF
+cat > dispatch-rule-01.json << EOF
 {
   "dispatch_rule": {
     "rule": {
@@ -158,12 +158,19 @@ cat > dispatch-rule.json << EOF
   }
 }
 EOF
-lk sip dispatch create dispatch-rule.json
+lk sip dispatch create dispatch-rule-01.json
 ```
+
 * Set up SIP client (`https://www.zoiper.com/en/voip-softphone/download/current`)
   SIP account (you must to use main host network interface IP address, not localhost):
       * Username: testtrunk
       * Password: testpass
       * Domain: 192.168.31.41:5060
+
+* Set up SIP client (`https://www.linphone.org/en/homepage-linphone/`)
+    SIP account (you must to use main host network interface IP address, not localhost):
+      * Displayname" sip-test
+      * Username: sip-test
+
 
 
