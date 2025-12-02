@@ -101,10 +101,12 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    environment:
+      - PYTHONPYCACHEPREFIX=/app/__pycache__
     volumes:
       - ./mcp_server.py:/app/mcp_server.py:ro
       - ./common:/app/common:ro
-      - common-pycache:/app/common/__pycache__
+      - mcp-common-pycache:/app/__pycache__:rw
     restart: unless-stopped    
 
   #   # Voice Agent
@@ -133,11 +135,12 @@ services:
     env_file:
       - .env
     environment:
-      PYTHONUNBUFFERED: "1"
+      - PYTHONUNBUFFERED: "1"
+      - PYTHONPYCACHEPREFIX=/app/__pycache__
     volumes:
       - ./voice_agent.py:/app/voice_agent.py:ro
       - ./common:/app/common:ro
-      - common-pycache:/app/common/__pycache__
+      - voice-agent-common-pycache:/app/__pycache__:rw
     depends_on:
       livekit:
         condition: service_started
@@ -154,4 +157,5 @@ volumes:
   mariadb_data:
   redis_data:
   ollama_data:
-  common-pycache:
+  mcp-common-pycache:
+  voice-agent-common-pycache:
