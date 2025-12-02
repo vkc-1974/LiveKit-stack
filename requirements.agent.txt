@@ -1,0 +1,10 @@
+httpx
+faster-whisper
+edge-tts
+livekit-agents==1.11.0
+livekit-plugins-silero==0.2.1
+livekit-plugins-ollama>=0.3.0
+torchaudio
+soundfile
+mariadb
+python-dotenv

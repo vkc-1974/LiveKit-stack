@@ -46,74 +46,6 @@ pip install \
     uvicorn
 ```
 
-* Prepare `docker-compse.yaml` file (`mariadb + Livekit + redis + livekit/sip`):
-```yaml
-services:
-  # MariaDB
-  mariadb:
-    image: mariadb:11.4
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: livekit_db
-      MYSQL_USER: livekit_user
-      MYSQL_PASSWORD: livekit_pass
-    ports:
-      - "3316:3306"
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    restart: unless-stopped
-
-  # Radis
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
-
-  # Livekit SFU Server
-  livekit:
-    image: livekit/livekit-server:latest
-    ports:
-      - "7880:7880"
-      - "7881:7881"
-      - "7882:7882/udp"
-      - "51000-51199:50000-50199/udp"
-    volumes:
-      - ./livekit.yaml:/etc/livekit.yaml
-    command: --config /etc/livekit.yaml --dev
-    depends_on:
-      - redis
-    restart: unless-stopped
-
-  # Livekit SIP Server
-  sip:
-    image: livekit/sip:latest
-    ports:
-      - "5060:5060/tcp"
-      - "5060:5060/udp"
-      - "55000-55199:50000-50199/udp"
-    environment:
-      SIP_CONFIG_BODY: |
-        log_level: debug
-        api_key: APIAr4ziPRxD7RQ
-        api_secret: NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
-        ws_url: ws://livekit:7880
-        redis:
-          address: redis:6379
-        sip_port: 5060
-        rtp_port: 50000-50199
-        use_external_ip: true
-    depends_on:
-      - livekit
-      - redis
-    restart: unless-stopped
-
-volumes:
-  mariadb_data:
-  redis_data:
-```
-
 * Start services (containers)
 ```shell
 docker compose up
@@ -133,12 +65,22 @@ SELECT * FROM users;
 EXIT;
 ```
 
+* Check if `redis` service is ready
+```shell
+docker exec -it $(docker ps -qf "name=redis") redis-cli ping
+```
+
+* Check if `mariadb` service is runnig
+```shell
+docker exec -it $(docker ps -qf "name=mariadb") mariadb -u livekit_user -plivekit_pass livekit_db -e "SELECT * FROM users;"
+```
+
 * Download LLM
 ```shell
 docker exec -it $(docker ps -qf "name=ollama") ollama pull llama3.2:3b-instruct-q4_K_M
 ```
 
-* Create dispatch rule
+* Create dispatch rule (you need to have environment variables `LIVEKIT_URL`, `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` mentioned above to be set)
 ```shell
 cat > dispatch-rule-01.json << EOF
 {
@@ -159,6 +101,11 @@ cat > dispatch-rule-01.json << EOF
 }
 EOF
 lk sip dispatch create dispatch-rule-01.json
+```
+
+* Check if dispatch rule is set up properly
+```shell
+lk sip dispatch list
 ```
 
 * Set up SIP client (`https://www.zoiper.com/en/voip-softphone/download/current`)

@@ -1,10 +1,13 @@
 #!/bin/env python3
 
 # mcp_server.py
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import mariadb
 import uvicorn
+
+load_dotenv()
 
 app = FastAPI(title="MCP Server")
 

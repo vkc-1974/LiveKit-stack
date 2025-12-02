@@ -2,28 +2,43 @@ services:
   # MariaDB
   mariadb:
     image: mariadb:11.4
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: livekit_db
-      MYSQL_USER: livekit_user
-      MYSQL_PASSWORD: livekit_pass
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
     ports:
       - "3316:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   # Radis
   redis:
     image: redis:7-alpine
+    env_file:
+      - .env
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --save 60 1 --appendonly yes
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
 
   # Livekit SFU Server
   livekit:
     image: livekit/livekit-server:latest
+    env_file:
+      - .env
     ports:
       - "7880:7880"
       - "7881:7881"
@@ -33,12 +48,15 @@ services:
       - ./livekit.yaml:/etc/livekit.yaml
     command: --config /etc/livekit.yaml --dev
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   # Livekit SIP Bridge
   sip:
     image: livekit/sip:latest
+    env_file:
+      - .env
     ports:
       - "5060:5060/tcp"
       - "5060:5060/udp"
@@ -46,9 +64,9 @@ services:
     environment:
       SIP_CONFIG_BODY: |
         log_level: debug
-        api_key: APIAr4ziPRxD7RQ
-        api_secret: NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
-        ws_url: ws://livekit:7880
+        api_key: ${LIVEKIT_API_KEY}
+        api_secret: ${LIVEKIT_API_SECRET}
+        ws_url: ${LIVEKIT_URL}
         redis:
           address: redis:6379
         sip_port: 5060
@@ -57,17 +75,18 @@ services:
         media_timeout: "0s"
     depends_on:
       - livekit
-      - redis
     restart: unless-stopped
 
   # LLM (Ollama)
   ollama:
     image: ollama/ollama
+    env_file:
+      - .env
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    ##### restart: unless-stopped
+    restart: unless-stopped
     command: serve
 
   # DB MCP Server (HTTP)
@@ -75,30 +94,64 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.mcp
+    env_file:
+      - .env
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     ports:
       - "8000:8000"
+    volumes:
+      - ./mcp_server.py:/app/mcp_server.py:ro
+      - ./common:/app/common:ro
+      - common-pycache:/app/common/__pycache__
     restart: unless-stopped    
 
-  # Voice Agent
-  agent:
+  #   # Voice Agent
+  #   agent:
+  #     build:
+  #       context: .
+  #       dockerfile: Dockerfile.agent
+  #     environment:
+  #       LIVEKIT_URL=ws://livekit:7880
+  #       LIVEKIT_API_KEY=APIAr4ziPRxD7RQ
+  #       LIVEKIT_API_SECRET=NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
+  #       OLLAMA_URL=http://ollama:11434
+  #       DB_HOST=mariadb
+  # #     - MCP_SERVER_URL=http://mcp:8000
+  #     depends_on:
+  #       - livekit
+  #       - ollama
+  #       - mcp
+  #       - sip
+  #     restart: unless-stopped
+
+  voice-agent:
     build:
       context: .
       dockerfile: Dockerfile.agent
+    env_file:
+      - .env
     environment:
-      - LIVEKIT_URL=ws://livekit:7880
-      - LIVEKIT_API_KEY=APIAr4ziPRxD7RQ
-      - LIVEKIT_API_SECRET=NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
-      - MCP_SERVER_URL=http://mcp:8000
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./voice_agent.py:/app/voice_agent.py:ro
+      - ./common:/app/common:ro
+      - common-pycache:/app/common/__pycache__
     depends_on:
-      - livekit
-      - ollama
-      - mcp
-      - sip
+      livekit:
+        condition: service_started
+      ollama:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+      mcp:
+        condition: service_started
     restart: unless-stopped
+    command: python -u voice_agent.py
 
 volumes:
   mariadb_data:
   redis_data:
   ollama_data:
+  common-pycache:

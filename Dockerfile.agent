@@ -1,13 +1,10 @@
 # Dockerfile.agent
 FROM python:3.11-slim
 
-RUN pip install --no-cache-dir \
-    httpx \
-    "livekit-agents[silero,openai]" \
-    "faster-whisper" \
-    "edge-tts"
-
-COPY agent.py /app/
 WORKDIR /app
+COPY agent.py .
+COPY requirements.agent.txt .
+COPY .env .
+RUN pip install --no-cache-dir -r requirements.agent.txt
 
 CMD ["python", "agent.py", "start"]

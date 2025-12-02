@@ -8,6 +8,6 @@ keys:
     APIAr4ziPRxD7RQ: NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC
 logging:
     json: false
-    level: info
+    level: debug
 redis:
   address: redis:6379
