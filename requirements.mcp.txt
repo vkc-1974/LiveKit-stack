@@ -1,4 +1,4 @@
 fastapi
 uvicorn
 mariadb
-dotenv
+pydantic_settings

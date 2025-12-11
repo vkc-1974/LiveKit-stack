@@ -9,10 +9,11 @@ class Settings(BaseSettings):
     livekit_api_secret: str
 
     # Ollama service URL
-    ollama_url: str = "http://ollama:11434"
+    ollama_url: str
+    ollama_model: str
 
     # MariaDB connection settings
-    db_host: str = "mariadb"
+    db_host: str
     db_port: int = 3306
     db_user: str
     db_pass: str
@@ -35,7 +36,6 @@ class Settings(BaseSettings):
         case_sensitive=False,      # Allows lowercase/uppercase in env vars
         extra="ignore",            # Ignores undefined environment variables
     )
-
 
 # Singleton instance — import and use anywhere in the project
 settings = Settings()

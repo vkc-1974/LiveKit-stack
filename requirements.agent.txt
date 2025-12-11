@@ -7,4 +7,4 @@ livekit-plugins-ollama>=0.3.0
 torchaudio
 soundfile
 mariadb
-python-dotenv
+pydantic_settings

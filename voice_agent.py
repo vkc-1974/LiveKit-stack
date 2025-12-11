@@ -1,35 +1,25 @@
 #!/bin/env python3
 
 import asyncio
-import os
-from dotenv import load_dotenv
 from livekit import rtc
 from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli, llm
-from livekit.agents.voice_assistant import VoiceAssistant  # Для voice pipeline
-from livekit.plugins import silero, openai  # Замените на ollama для Llama
-# Для Ollama: pip install livekit-plugins-ollama (если доступно; иначе custom LLM)
-from livekit.plugins.ollama import OllamaLLM  # Предполагаем плагин; если нет, используйте openai с proxy или custom
-import mariadb  # Для MCP/DB access
-from livekit.agents.llm import function_tool  # Для инструментов MCP
+from livekit.agents.voice_assistant import VoiceAssistant
+from livekit.plugins import silero, openai
+from livekit.plugins.ollama import OllamaLLM
+import mariadb
+from livekit.agents.llm import function_tool
+from common import settings
 
-load_dotenv()
-
-# Env vars (добавьте в .env или docker-compose env для agent-сервиса)
-LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://localhost:7880")
-LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "APIAr4ziPRxD7RQ")
-LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "NG4BDigFkZpjXZrJ7oPfHd9p0WdxPLuffJcAKUHJjKfC")
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")  # Или ollama:11434 в сети
-DB_HOST = os.getenv("DB_HOST", "mariadb")
-DB_USER = os.getenv("DB_USER", "livekit_user")
-DB_PASS = os.getenv("DB_PASS", "livekit_pass")
-DB_NAME = os.getenv("DB_NAME", "livekit_db")
-
-# MCP tool: функция для query DB (пример для баланса пользователя)
+# MCP tool: a routine to get a user account balance
 @function_tool
 async def get_user_balance(user_id: int) -> str:
     """Get user balance from DB via MCP interface."""
     try:
-        conn = mariadb.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
+        conn = mariadb.connect(host=settings.db_host,
+                               port=settings.db_port,
+                               user=settings.db_user,
+                               password=settings.db_pass,
+                               database=settings.db_name)
         cursor = conn.cursor()
         cursor.execute("SELECT balance_value FROM users WHERE user_id = ?", (user_id,))
         result = cursor.fetchone()
@@ -43,11 +33,10 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)  # Подписка только на аудио (SIP)
 
     # Инициализация LLM с Llama (Ollama plugin; если нет, используйте openai.LLM с custom endpoint)
-    llm_plugin = OllamaLLM(
-        model="llama3.2:3b-instruct-q4_K_M",
-        base_url=OLLAMA_URL,
-        temperature=0.7
-    )
+    llm_plugin = OllamaLLM(model=settings.ollama_model,
+                           base_url=settings.ollama_url,
+                           temperature=0.7)
+
     # Добавьте tool для MCP
     llm_plugin.add_tool(get_user_balance)
 
