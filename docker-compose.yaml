@@ -102,7 +102,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPYCACHEPREFIX=/app/__pycache__
+      PYTHONPYCACHEPREFIX: /app/__pycache__
     volumes:
       - ./mcp_server.py:/app/mcp_server.py:ro
       - ./common:/app/common:ro
@@ -135,8 +135,8 @@ services:
     env_file:
       - .env
     environment:
-      - PYTHONUNBUFFERED: "1"
-      - PYTHONPYCACHEPREFIX=/app/__pycache__
+      PYTHONUNBUFFERED: 1
+      PYTHONPYCACHEPREFIX: /app/__pycache__
     volumes:
       - ./voice_agent.py:/app/voice_agent.py:ro
       - ./common:/app/common:ro
