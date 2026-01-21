@@ -62,11 +62,15 @@ services:
       - "5060:5060/udp"
       - "55000-55199:50000-50199/udp"
     environment:
+      LIVEKIT_URL: "${LIVEKIT_URL}"
+      LIVEKIT_WS_URL: "${LIVEKIT_URL}"
+      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY}"
+      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET}"
       SIP_CONFIG_BODY: |
         log_level: debug
         api_key: ${LIVEKIT_API_KEY}
         api_secret: ${LIVEKIT_API_SECRET}
-        ws_url: ${LIVEKIT_URL}
+        ws_url: ws://livekit:7880
         redis:
           address: redis:6379
         sip_port: 5060
@@ -141,6 +145,7 @@ services:
       - ./voice_agent.py:/app/voice_agent.py:ro
       - ./common:/app/common:ro
       - voice-agent-common-pycache:/app/__pycache__:rw
+      - ./models:/app/models:ro
     depends_on:
       livekit:
         condition: service_started
@@ -151,7 +156,7 @@ services:
       mcp:
         condition: service_started
     restart: unless-stopped
-    command: python -u voice_agent.py
+    command: python -u /app/voice_agent.py start
 
 volumes:
   mariadb_data:

@@ -9,6 +9,8 @@ import uvicorn
 from common import settings
 
 app = FastAPI(title="MCP Server")
+host = "0.0.0.0"
+port = 8000
 
 # DB connection
 conn = mariadb.connect(host=settings.db_host,
@@ -35,4 +37,5 @@ async def get_user_balance(req: BalanceRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print(f"[MCP] Start running at {host}:{port}")
+    uvicorn.run(app, host=host, port=port)

@@ -1,10 +1,10 @@
+uv
+mariadb
 httpx
 faster-whisper
 edge-tts
-livekit-agents==1.11.0
-livekit-plugins-silero==0.2.1
-livekit-plugins-ollama>=0.3.0
+livekit-plugins-openai
+livekit-plugins-silero
 torchaudio
 soundfile
-mariadb
 pydantic_settings

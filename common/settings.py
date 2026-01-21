@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     ollama_url: str
     ollama_model: str
 
+    # MCP interface to MariaDB
+    mcp_server_url: str
+
     # MariaDB connection settings
     db_host: str
     db_port: int = 3306
